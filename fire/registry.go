@@ -18,21 +18,21 @@ func (r Registry) Mux() *http.ServeMux {
 	return mux
 }
 
-type Operations[T any] struct {
+type Operations[R Resource] struct {
 	// Read the current state of the resource.
-	Read ReadHandler
+	Read ReadHandler[R]
 	// Read the state of a specific version of the resource.
-	VRead VReadHandler
+	VRead VReadHandler[R]
 	// Update an existing resource by its id (or create it if it is new).
-	Update UpdateHandler
+	Update UpdateHandler[R]
 	// Update an existing resource by posting a set of changes to it.
-	Patch PatchHandler
+	Patch PatchHandler[R]
 	// Delete a resource.
-	Delete DeleteHandler
+	Delete DeleteHandler[R]
 	// Create a new resource with a server assigned id.
-	Create CreateHandler
+	Create CreateHandler[R]
 	// Search the resource type based on some filter criteria.
-	Search SearchHandler
+	Search SearchHandler[R]
 }
 
 func (ops Operations[T]) extend(t Type, res []Operation) []Operation {

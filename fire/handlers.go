@@ -1,39 +1,44 @@
 package fire
 
-import "net/http"
-
-type (
-	ReadHandler   func(ReadRequest) Response
-	VReadHandler  func(VReadRequest) Response
-	UpdateHandler func(UpdateRequest) Response
-	PatchHandler  func(PatchRequest) Response
-	DeleteHandler func(DeleteRequest) Response
-	CreateHandler func(CreateRequest) Response
-	SearchHandler func(SearchRequest) Response
+import (
+	"encoding/json/v2"
+	"net/http"
 )
 
-func (h ReadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	base := &BaseRequest{HTTPRequest: r}
-	err := base.Parse()
+type Resource json.Marshaler
+
+type (
+	ReadHandler[R Resource]   func(ReadRequest[R]) Response
+	VReadHandler[R Resource]  func(VReadRequest[R]) Response
+	UpdateHandler[R Resource] func(UpdateRequest[R]) Response
+	PatchHandler[R Resource]  func(PatchRequest[R]) Response
+	DeleteHandler[R Resource] func(DeleteRequest[R]) Response
+	CreateHandler[R Resource] func(CreateRequest[R]) Response
+	SearchHandler[R Resource] func(SearchRequest[R]) Response
+)
+
+func (h ReadHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	base := &BaseRequest[R]{HTTPRequest: r}
+	err := base.parse()
 	if err != nil {
 		writeErr(w, err)
 		return
 	}
-	req := ReadRequest{
+	req := ReadRequest[R]{
 		BaseRequest: base,
 		ID:          r.PathValue("id"),
 	}
 	sendResp(w, h(req))
 }
 
-func (h VReadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	base := &BaseRequest{HTTPRequest: r}
-	err := base.Parse()
+func (h VReadHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	base := &BaseRequest[R]{HTTPRequest: r}
+	err := base.parse()
 	if err != nil {
 		writeErr(w, err)
 		return
 	}
-	req := VReadRequest{
+	req := VReadRequest[R]{
 		BaseRequest: base,
 		ID:          r.PathValue("id"),
 		VID:         r.PathValue("vid"),
@@ -41,69 +46,69 @@ func (h VReadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	sendResp(w, h(req))
 }
 
-func (h UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	base := &BaseRequest{HTTPRequest: r}
-	err := base.Parse()
+func (h UpdateHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	base := &BaseRequest[R]{HTTPRequest: r}
+	err := base.parse()
 	if err != nil {
 		writeErr(w, err)
 		return
 	}
-	req := UpdateRequest{
+	req := UpdateRequest[R]{
 		BaseRequest: base,
 		ID:          r.PathValue("id"),
 	}
 	sendResp(w, h(req))
 }
 
-func (h PatchHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	base := &BaseRequest{HTTPRequest: r}
-	err := base.Parse()
+func (h PatchHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	base := &BaseRequest[R]{HTTPRequest: r}
+	err := base.parse()
 	if err != nil {
 		writeErr(w, err)
 		return
 	}
-	req := PatchRequest{
+	req := PatchRequest[R]{
 		BaseRequest: base,
 		ID:          r.PathValue("id"),
 	}
 	sendResp(w, h(req))
 }
 
-func (h DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	base := &BaseRequest{HTTPRequest: r}
-	err := base.Parse()
+func (h DeleteHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	base := &BaseRequest[R]{HTTPRequest: r}
+	err := base.parse()
 	if err != nil {
 		writeErr(w, err)
 		return
 	}
-	req := DeleteRequest{
+	req := DeleteRequest[R]{
 		BaseRequest: base,
 		ID:          r.PathValue("id"),
 	}
 	sendResp(w, h(req))
 }
 
-func (h CreateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	base := &BaseRequest{HTTPRequest: r}
-	err := base.Parse()
+func (h CreateHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	base := &BaseRequest[R]{HTTPRequest: r}
+	err := base.parse()
 	if err != nil {
 		writeErr(w, err)
 		return
 	}
-	req := CreateRequest{
+	req := CreateRequest[R]{
 		BaseRequest: base,
 	}
 	sendResp(w, h(req))
 }
 
-func (h SearchHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	base := &BaseRequest{HTTPRequest: r}
-	err := base.Parse()
+func (h SearchHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	base := &BaseRequest[R]{HTTPRequest: r}
+	err := base.parse()
 	if err != nil {
 		writeErr(w, err)
 		return
 	}
-	req := SearchRequest{
+	req := SearchRequest[R]{
 		BaseRequest: base,
 	}
 	sendResp(w, h(req))

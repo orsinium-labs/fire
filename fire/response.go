@@ -1,7 +1,5 @@
 package fire
 
-import "net/http"
-
 type Response struct {
 	Status   int
 	Resource any
@@ -12,11 +10,4 @@ type Response struct {
 	LastModified    string
 	Location        string
 	ContentLocation string
-}
-
-func Ok(r any) Response {
-	return Response{
-		Status:   http.StatusOK,
-		Resource: r,
-	}
 }

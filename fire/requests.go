@@ -3,10 +3,11 @@ package fire
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
-type BaseRequest struct {
+type BaseRequest[R Resource] struct {
 	HTTPRequest *http.Request
 
 	ContentType ContentType
@@ -28,7 +29,7 @@ type BaseRequest struct {
 	Summary  Summary
 }
 
-func (r *BaseRequest) Parse() error {
+func (r *BaseRequest[R]) parse() error {
 	raw := r.HTTPRequest
 
 	// Parse headers.
@@ -73,12 +74,12 @@ func (r *BaseRequest) Parse() error {
 	return r.validate()
 }
 
-func (r *BaseRequest) validate() error {
+func (r *BaseRequest[R]) validate() error {
 	switch r.ContentType {
 	case ContentTypeForm:
 	case ContentTypeJSON:
 	case ContentTypeTurtle:
-		return errors.New("Turtle format is not supported")
+		return errors.New("Turtle format is not supported") //nolint:staticcheck
 	case ContentTypeXML:
 	case "":
 	default:
@@ -88,7 +89,7 @@ func (r *BaseRequest) validate() error {
 	switch r.Accept {
 	case ContentTypeJSON:
 	case ContentTypeTurtle:
-		return errors.New("Turtle format is not supported")
+		return errors.New("Turtle format is not supported") //nolint:staticcheck
 	case ContentTypeXML:
 	case "":
 	default:
@@ -102,36 +103,48 @@ func (r *BaseRequest) validate() error {
 	return nil
 }
 
-type ReadRequest struct {
-	*BaseRequest
+type ReadRequest[R Resource] struct {
+	*BaseRequest[R]
 	ID string
 }
 
-type VReadRequest struct {
-	*BaseRequest
+func (r ReadRequest[R]) Ok(res R) Response {
+	return Response{Status: http.StatusOK, Resource: res}
+}
+
+type VReadRequest[R Resource] struct {
+	*BaseRequest[R]
 	ID  string
 	VID string
 }
 
-type UpdateRequest struct {
-	*BaseRequest
+func (r VReadRequest[R]) Ok(res R) Response {
+	return Response{Status: http.StatusOK, Resource: res}
+}
+
+type UpdateRequest[R Resource] struct {
+	*BaseRequest[R]
+	ID   string
+	Body R
+}
+
+type PatchRequest[R Resource] struct {
+	*BaseRequest[R]
+	ID   string
+	Body R
+}
+
+type DeleteRequest[R Resource] struct {
+	*BaseRequest[R]
 	ID string
 }
 
-type PatchRequest struct {
-	*BaseRequest
-	ID string
+type CreateRequest[R Resource] struct {
+	*BaseRequest[R]
+	Body R
 }
 
-type DeleteRequest struct {
-	*BaseRequest
-	ID string
-}
-
-type CreateRequest struct {
-	*BaseRequest
-}
-
-type SearchRequest struct {
-	*BaseRequest
+type SearchRequest[R Resource] struct {
+	*BaseRequest[R]
+	Body url.Values
 }
