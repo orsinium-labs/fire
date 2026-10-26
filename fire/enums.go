@@ -22,6 +22,44 @@ const (
 	InteractionSearch Interaction = "search"
 )
 
+type Prefer string
+
+const (
+	PreferMinimal          Prefer = "return=minimal"
+	PreferRepresentation   Prefer = "return=representation"
+	PreferOperationOutcome Prefer = "return=OperationOutcome"
+)
+
+type ContentType string
+
+const (
+	ContentTypeXML    ContentType = "application/fhir+xml"
+	ContentTypeJSON   ContentType = "application/fhir+json"
+	ContentTypeTurtle ContentType = "application/fhir+turtle"
+	ContentTypeForm   ContentType = "application/x-www-form-urlencoded"
+)
+
+type FHIRVersion string
+
+const (
+	FHIRVersionR1  = "0.0"
+	FHIRVersionR2  = "1.0"
+	FHIRVersionR3  = "3.0"
+	FHIRVersionR4  = "4.0"
+	FHIRVersionR4B = "4.3"
+	FHIRVersionR5  = "5.0"
+)
+
+type Summary string
+
+const (
+	SummaryTrue  = "true"
+	SummaryText  = "text"
+	SummaryData  = "data"
+	SummaryCount = "count"
+	SummaryFalse = "false"
+)
+
 type Type string
 
 const (
