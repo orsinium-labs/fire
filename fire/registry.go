@@ -2,95 +2,108 @@ package fire
 
 import "net/http"
 
-type Registry struct {
-	ops []Operation
+type Registry map[Type]interface {
+	extend(Type, []Operation) []Operation
 }
 
-func NewRegistry() *Registry {
-	return &Registry{}
-}
-
-func (r *Registry) Mux() *http.ServeMux {
+func (r Registry) Mux() *http.ServeMux {
 	mux := http.NewServeMux()
-	for _, op := range r.ops {
+	ops := []Operation{}
+	for t, op := range r {
+		op.extend(t, ops)
+	}
+	for _, op := range ops {
 		op.Register(mux)
 	}
 	return mux
 }
 
-// Read the current state of the resource.
-func (r *Registry) Read(t Type, h Handler) {
-	r.ops = append(r.ops, Operation{
-		Verb:        VerbGet,
-		Path:        "/" + string(t) + "/{id}",
-		Interaction: InteractionRead,
-		Type:        t,
-		Handler:     h,
-	})
+type Operations[T any] struct {
+	// Read the current state of the resource.
+	Read ReadHandler
+	// Read the state of a specific version of the resource.
+	VRead VReadHandler
+	// Update an existing resource by its id (or create it if it is new).
+	Update UpdateHandler
+	// Update an existing resource by posting a set of changes to it.
+	Patch PatchHandler
+	// Delete a resource.
+	Delete DeleteHandler
+	// Create a new resource with a server assigned id.
+	Create CreateHandler
+	// Search the resource type based on some filter criteria.
+	Search SearchHandler
 }
 
-// Read the state of a specific version of the resource.
-func (r *Registry) VRead(t Type, h Handler) {
-	r.ops = append(r.ops, Operation{
-		Verb:        VerbGet,
-		Path:        "/" + string(t) + "/{id}/_history/{vid}",
-		Interaction: InteractionVRead,
-		Type:        t,
-		Handler:     h,
-	})
-}
+func (ops Operations[T]) extend(t Type, res []Operation) []Operation {
+	if ops.Read != nil {
+		res = append(res, Operation{
+			Verb:        VerbGet,
+			Path:        "/" + string(t) + "/{id}",
+			Interaction: InteractionRead,
+			Type:        t,
+			Handler:     ops.Read,
+		})
+	}
 
-// Update an existing resource by its id (or create it if it is new).
-func (r *Registry) Update(t Type, h Handler) {
-	r.ops = append(r.ops, Operation{
-		Verb:        VerbPut,
-		Path:        "/" + string(t) + "/{id}",
-		Interaction: InteractionUpdate,
-		Type:        t,
-		Handler:     h,
-	})
-}
+	if ops.VRead != nil {
+		res = append(res, Operation{
+			Verb:        VerbGet,
+			Path:        "/" + string(t) + "/{id}/_history/{vid}",
+			Interaction: InteractionVRead,
+			Type:        t,
+			Handler:     ops.VRead,
+		})
+	}
 
-// Update an existing resource by posting a set of changes to it.
-func (r *Registry) Patch(t Type, h Handler) {
-	r.ops = append(r.ops, Operation{
-		Verb:        VerbPatch,
-		Path:        "/" + string(t) + "/{id}",
-		Interaction: InteractionPatch,
-		Type:        t,
-		Handler:     h,
-	})
-}
+	if ops.Update != nil {
+		res = append(res, Operation{
+			Verb:        VerbPut,
+			Path:        "/" + string(t) + "/{id}",
+			Interaction: InteractionUpdate,
+			Type:        t,
+			Handler:     ops.Update,
+		})
+	}
 
-// Delete a resource.
-func (r *Registry) Delete(t Type, h Handler) {
-	r.ops = append(r.ops, Operation{
-		Verb:        VerbDelete,
-		Path:        "/" + string(t) + "/{id}",
-		Interaction: InteractionDelete,
-		Type:        t,
-		Handler:     h,
-	})
-}
+	if ops.Patch != nil {
+		res = append(res, Operation{
+			Verb:        VerbPatch,
+			Path:        "/" + string(t) + "/{id}",
+			Interaction: InteractionPatch,
+			Type:        t,
+			Handler:     ops.Patch,
+		})
+	}
 
-// Create a new resource with a server assigned id.
-func (r *Registry) Create(t Type, h Handler) {
-	r.ops = append(r.ops, Operation{
-		Verb:        VerbPost,
-		Path:        "/" + string(t),
-		Interaction: InteractionCreate,
-		Type:        t,
-		Handler:     h,
-	})
-}
+	if ops.Delete != nil {
+		res = append(res, Operation{
+			Verb:        VerbDelete,
+			Path:        "/" + string(t) + "/{id}",
+			Interaction: InteractionDelete,
+			Type:        t,
+			Handler:     ops.Delete,
+		})
+	}
 
-// Search the resource type based on some filter criteria.
-func (r *Registry) Search(t Type, h Handler) {
-	r.ops = append(r.ops, Operation{
-		Verb:        VerbPost,
-		Path:        "/" + string(t) + "/_search",
-		Interaction: InteractionSearch,
-		Type:        t,
-		Handler:     h,
-	})
+	if ops.Create != nil {
+		res = append(res, Operation{
+			Verb:        VerbPost,
+			Path:        "/" + string(t),
+			Interaction: InteractionCreate,
+			Type:        t,
+			Handler:     ops.Create,
+		})
+	}
+
+	if ops.Search != nil {
+		res = append(res, Operation{
+			Verb:        VerbPost,
+			Path:        "/" + string(t) + "/_search",
+			Interaction: InteractionSearch,
+			Type:        t,
+			Handler:     ops.Search,
+		})
+	}
+	return res
 }

@@ -9,9 +9,11 @@ import (
 type BaseRequest struct {
 	HTTPRequest *http.Request
 
-	ContentType     ContentType
+	ContentType ContentType
+	// Content-negotiation for MIME Type.
+	Accept ContentType
+	// Content-negotiation for FHIR Version.
 	FHIRVersion     FHIRVersion
-	Accept          ContentType
 	IfMatch         string
 	IfModifiedSince string
 	IfNoneExist     string
@@ -30,12 +32,14 @@ func (r *BaseRequest) Parse() error {
 	raw := r.HTTPRequest
 
 	// Parse headers.
-	ct, fv, _ := strings.Cut(raw.Header.Get("Content-Type"), "; ")
-	r.ContentType = ContentType(ct)
+	r.ContentType = ContentType(raw.Header.Get("Content-Type"))
+	ct, fv, _ := strings.Cut(raw.Header.Get("Accept"), "; ")
+	r.Accept = ContentType(ct)
 	if fv != "" {
 		r.FHIRVersion = FHIRVersion(strings.TrimSuffix(fv, "fhirVersion="))
 	}
 	r.Accept = ContentType(raw.Header.Get("Accept"))
+
 	r.IfMatch = raw.Header.Get("If-Match")
 	r.IfModifiedSince = raw.Header.Get("If-Modified-Since")
 	r.IfNoneExist = raw.Header.Get("If-None-Exist")
