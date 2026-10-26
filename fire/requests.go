@@ -1,10 +1,11 @@
 package fire
 
 import (
-	"errors"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/orsinium-labs/fhir-server/statuses"
 )
 
 type BaseRequest[R Resource] struct {
@@ -29,8 +30,8 @@ type BaseRequest[R Resource] struct {
 	Summary  Summary
 }
 
-func (r *BaseRequest[R]) parse() error {
-	raw := r.HTTPRequest
+func parseRequest[R Resource](raw *http.Request) *BaseRequest[R] {
+	r := &BaseRequest[R]{HTTPRequest: raw}
 
 	// Parse headers.
 	r.ContentType = ContentType(raw.Header.Get("Content-Type"))
@@ -54,10 +55,9 @@ func (r *BaseRequest[R]) parse() error {
 	q := raw.URL.Query()
 	if r.ContentType == ContentTypeForm {
 		err := raw.ParseForm()
-		if err != nil {
-			return err
+		if err == nil {
+			q = raw.Form
 		}
-		q = raw.Form
 	}
 	switch q.Get("_format") {
 	case "xml", "text/xml", "application/xml", "application/fhir+xml":
@@ -71,36 +71,11 @@ func (r *BaseRequest[R]) parse() error {
 	r.Elements = strings.Split(q.Get("_elements"), ",")
 	r.Summary = Summary(q.Get("_summary"))
 
-	return r.validate()
+	return r
 }
 
-func (r *BaseRequest[R]) validate() error {
-	switch r.ContentType {
-	case ContentTypeForm:
-	case ContentTypeJSON:
-	case ContentTypeTurtle:
-		return errors.New("Turtle format is not supported") //nolint:staticcheck
-	case ContentTypeXML:
-	case "":
-	default:
-		return errors.New("unsupported Content-Type")
-	}
-
-	switch r.Accept {
-	case ContentTypeJSON:
-	case ContentTypeTurtle:
-		return errors.New("Turtle format is not supported") //nolint:staticcheck
-	case ContentTypeXML:
-	case "":
-	default:
-		return errors.New("unsupported Accept")
-	}
-
-	if r.FHIRVersion != "" && r.FHIRVersion != FHIRVersionR5 {
-		return errors.New("unsupported FHIR version")
-	}
-
-	return nil
+func (r *BaseRequest[R]) BadRequest[E Resource](res E) Response {
+	return Response{Status: statuses.BadRequest, Resource: res}
 }
 
 type ReadRequest[R Resource] struct {
@@ -109,7 +84,7 @@ type ReadRequest[R Resource] struct {
 }
 
 func (r ReadRequest[R]) Ok(res R) Response {
-	return Response{Status: http.StatusOK, Resource: res}
+	return Response{Status: statuses.OK, Resource: res}
 }
 
 type VReadRequest[R Resource] struct {
@@ -119,7 +94,7 @@ type VReadRequest[R Resource] struct {
 }
 
 func (r VReadRequest[R]) Ok(res R) Response {
-	return Response{Status: http.StatusOK, Resource: res}
+	return Response{Status: statuses.OK, Resource: res}
 }
 
 type UpdateRequest[R Resource] struct {
@@ -147,4 +122,8 @@ type CreateRequest[R Resource] struct {
 type SearchRequest[R Resource] struct {
 	*BaseRequest[R]
 	Body url.Values
+}
+
+func (r SearchRequest[R]) Ok(res []R) Response {
+	return Response{Status: statuses.OK, Resource: res}
 }

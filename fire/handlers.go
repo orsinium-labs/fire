@@ -18,106 +18,56 @@ type (
 )
 
 func (h ReadHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	base := &BaseRequest[R]{HTTPRequest: r}
-	err := base.parse()
-	if err != nil {
-		writeErr(w, err)
-		return
-	}
 	req := ReadRequest[R]{
-		BaseRequest: base,
+		BaseRequest: parseRequest[R](r),
 		ID:          r.PathValue("id"),
 	}
-	sendResp(w, h(req))
+	h(req).write(w)
 }
 
 func (h VReadHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	base := &BaseRequest[R]{HTTPRequest: r}
-	err := base.parse()
-	if err != nil {
-		writeErr(w, err)
-		return
-	}
 	req := VReadRequest[R]{
-		BaseRequest: base,
+		BaseRequest: parseRequest[R](r),
 		ID:          r.PathValue("id"),
 		VID:         r.PathValue("vid"),
 	}
-	sendResp(w, h(req))
+	h(req).write(w)
 }
 
 func (h UpdateHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	base := &BaseRequest[R]{HTTPRequest: r}
-	err := base.parse()
-	if err != nil {
-		writeErr(w, err)
-		return
-	}
 	req := UpdateRequest[R]{
-		BaseRequest: base,
+		BaseRequest: parseRequest[R](r),
 		ID:          r.PathValue("id"),
 	}
-	sendResp(w, h(req))
+	h(req).write(w)
 }
 
 func (h PatchHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	base := &BaseRequest[R]{HTTPRequest: r}
-	err := base.parse()
-	if err != nil {
-		writeErr(w, err)
-		return
-	}
 	req := PatchRequest[R]{
-		BaseRequest: base,
+		BaseRequest: parseRequest[R](r),
 		ID:          r.PathValue("id"),
 	}
-	sendResp(w, h(req))
+	h(req).write(w)
 }
 
 func (h DeleteHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	base := &BaseRequest[R]{HTTPRequest: r}
-	err := base.parse()
-	if err != nil {
-		writeErr(w, err)
-		return
-	}
 	req := DeleteRequest[R]{
-		BaseRequest: base,
+		BaseRequest: parseRequest[R](r),
 		ID:          r.PathValue("id"),
 	}
-	sendResp(w, h(req))
+	h(req).write(w)
 }
 
 func (h CreateHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	base := &BaseRequest[R]{HTTPRequest: r}
-	err := base.parse()
-	if err != nil {
-		writeErr(w, err)
-		return
-	}
 	req := CreateRequest[R]{
-		BaseRequest: base,
+		BaseRequest: parseRequest[R](r),
 	}
-	sendResp(w, h(req))
+	h(req).write(w)
 }
 
 func (h SearchHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	base := &BaseRequest[R]{HTTPRequest: r}
-	err := base.parse()
-	if err != nil {
-		writeErr(w, err)
-		return
-	}
 	req := SearchRequest[R]{
-		BaseRequest: base,
+		BaseRequest: parseRequest[R](r),
 	}
-	sendResp(w, h(req))
-}
-
-func sendResp(w http.ResponseWriter, resp Response) {
-	panic("todo")
-}
-
-func writeErr(w http.ResponseWriter, err error) {
-	panic("todo")
+	h(req).write(w)
 }
