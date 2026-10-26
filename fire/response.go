@@ -1,7 +1,9 @@
 package fire
 
 import (
+	"encoding/json/jsontext"
 	"encoding/json/v2"
+	"encoding/xml"
 	"net/http"
 
 	"github.com/orsinium-labs/fhir-server/statuses"
@@ -11,6 +13,7 @@ type Response struct {
 	Status   statuses.Status
 	Resource any
 
+	ContentType     ContentType
 	RequestID       string
 	CorrelationID   string
 	ETag            string
@@ -20,14 +23,41 @@ type Response struct {
 	Date            string
 }
 
-func (r Response) write(w http.ResponseWriter) {
-	r.writeHeaders(w)
-	w.WriteHeader(int(r.Status))
-	_ = json.MarshalWrite(w, r.Resource)
+func (resp *Response) write[R Resource](req *BaseRequest[R], w http.ResponseWriter) {
+	if resp.ContentType == "" {
+		if req.Accept != "" {
+			resp.ContentType = req.Accept
+		} else {
+			resp.ContentType = ContentTypeJSON
+		}
+	}
+	resp.writeHeaders(w)
+	w.WriteHeader(int(resp.Status))
+
+	if resp.ContentType == ContentTypeJSON {
+		if req.Pretty {
+			_ = json.MarshalWrite(
+				w, resp.Resource,
+				jsontext.Multiline(true),
+				jsontext.WithIndent("  "),
+			)
+		} else {
+			_ = json.MarshalWrite(w, resp.Resource)
+		}
+	} else {
+		e := xml.NewEncoder(w)
+		if req.Pretty {
+			e.Indent("", "  ")
+		}
+		_ = e.Encode(resp.Resource)
+	}
 }
 
-func (r Response) writeHeaders(w http.ResponseWriter) {
+func (r *Response) writeHeaders(w http.ResponseWriter) {
 	h := w.Header()
+	if r.ContentType != "" {
+		h.Add("Content-Type", string(r.ContentType))
+	}
 	if r.RequestID != "" {
 		h.Add("X-Request-Id", r.RequestID)
 	}

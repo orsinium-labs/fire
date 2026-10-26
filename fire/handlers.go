@@ -22,7 +22,8 @@ func (h ReadHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		BaseRequest: parseRequest[R](r),
 		ID:          r.PathValue("id"),
 	}
-	h(req).write(w)
+	resp := h(req)
+	resp.write(req.BaseRequest, w)
 }
 
 func (h VReadHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +32,8 @@ func (h VReadHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ID:          r.PathValue("id"),
 		VID:         r.PathValue("vid"),
 	}
-	h(req).write(w)
+	resp := h(req)
+	resp.write(req.BaseRequest, w)
 }
 
 func (h UpdateHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +41,8 @@ func (h UpdateHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		BaseRequest: parseRequest[R](r),
 		ID:          r.PathValue("id"),
 	}
-	h(req).write(w)
+	resp := h(req)
+	resp.write(req.BaseRequest, w)
 }
 
 func (h PatchHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +50,8 @@ func (h PatchHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		BaseRequest: parseRequest[R](r),
 		ID:          r.PathValue("id"),
 	}
-	h(req).write(w)
+	resp := h(req)
+	resp.write(req.BaseRequest, w)
 }
 
 func (h DeleteHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -55,19 +59,22 @@ func (h DeleteHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		BaseRequest: parseRequest[R](r),
 		ID:          r.PathValue("id"),
 	}
-	h(req).write(w)
+	resp := h(req)
+	resp.write(req.BaseRequest, w)
 }
 
 func (h CreateHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	req := CreateRequest[R]{
 		BaseRequest: parseRequest[R](r),
 	}
-	h(req).write(w)
+	resp := h(req)
+	resp.write(req.BaseRequest, w)
 }
 
 func (h SearchHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	req := SearchRequest[R]{
 		BaseRequest: parseRequest[R](r),
 	}
-	h(req).write(w)
+	resp := h(req)
+	resp.write(req.BaseRequest, w)
 }
