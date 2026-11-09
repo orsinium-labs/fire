@@ -54,8 +54,8 @@ func parseRequest[R Resource](raw *http.Request) *BaseRequest[R] {
 	// Parse query params.
 	q := raw.URL.Query()
 	if r.ContentType == ContentTypeForm {
-		err := raw.ParseForm()
-		if err == nil {
+		_ = raw.ParseForm()
+		if raw.Form != nil {
 			q = raw.Form
 		}
 	}
@@ -99,14 +99,16 @@ func (r VReadRequest[R]) Ok(res R) Response {
 
 type UpdateRequest[R Resource] struct {
 	*BaseRequest[R]
-	ID   string
-	Body R
+	ID      string
+	Body    R
+	RawBody []byte
 }
 
 type PatchRequest[R Resource] struct {
 	*BaseRequest[R]
-	ID   string
-	Body R
+	ID      string
+	Body    R
+	RawBody []byte
 }
 
 type DeleteRequest[R Resource] struct {
@@ -116,7 +118,8 @@ type DeleteRequest[R Resource] struct {
 
 type CreateRequest[R Resource] struct {
 	*BaseRequest[R]
-	Body R
+	Body    R
+	RawBody []byte
 }
 
 type SearchRequest[R Resource] struct {

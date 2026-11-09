@@ -2,10 +2,15 @@ package fire
 
 import (
 	"encoding/json/v2"
+	"errors"
+	"io"
 	"net/http"
 )
 
-type Resource json.Marshaler
+type Resource interface {
+	json.Marshaler
+	ResourceType() string
+}
 
 type (
 	ReadHandler[R Resource]   func(ReadRequest[R]) Response
@@ -18,8 +23,9 @@ type (
 )
 
 func (h ReadHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	base := parseRequest[R](r)
 	req := ReadRequest[R]{
-		BaseRequest: parseRequest[R](r),
+		BaseRequest: base,
 		ID:          r.PathValue("id"),
 	}
 	resp := h(req)
@@ -27,8 +33,9 @@ func (h ReadHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h VReadHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	base := parseRequest[R](r)
 	req := VReadRequest[R]{
-		BaseRequest: parseRequest[R](r),
+		BaseRequest: base,
 		ID:          r.PathValue("id"),
 		VID:         r.PathValue("vid"),
 	}
@@ -37,26 +44,53 @@ func (h VReadHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h UpdateHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	raw, err := parseRawBody(r)
+	if err != nil {
+		sendErr(w, err)
+		return
+	}
+	base := parseRequest[R](r)
+	body, err := parseBody[R](base, raw)
+	if err != nil {
+		sendErr(w, err)
+		return
+	}
 	req := UpdateRequest[R]{
-		BaseRequest: parseRequest[R](r),
+		BaseRequest: base,
 		ID:          r.PathValue("id"),
+		Body:        body,
+		RawBody:     raw,
 	}
 	resp := h(req)
 	resp.write(req.BaseRequest, w)
 }
 
 func (h PatchHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	raw, err := parseRawBody(r)
+	if err != nil {
+		sendErr(w, err)
+		return
+	}
+	base := parseRequest[R](r)
+	body, err := parseBody[R](base, raw)
+	if err != nil {
+		sendErr(w, err)
+		return
+	}
 	req := PatchRequest[R]{
-		BaseRequest: parseRequest[R](r),
+		BaseRequest: base,
 		ID:          r.PathValue("id"),
+		Body:        body,
+		RawBody:     raw,
 	}
 	resp := h(req)
 	resp.write(req.BaseRequest, w)
 }
 
 func (h DeleteHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	base := parseRequest[R](r)
 	req := DeleteRequest[R]{
-		BaseRequest: parseRequest[R](r),
+		BaseRequest: base,
 		ID:          r.PathValue("id"),
 	}
 	resp := h(req)
@@ -64,17 +98,61 @@ func (h DeleteHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h CreateHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	raw, err := parseRawBody(r)
+	if err != nil {
+		sendErr(w, err)
+		return
+	}
+	base := parseRequest[R](r)
+	body, err := parseBody[R](base, raw)
+	if err != nil {
+		sendErr(w, err)
+		return
+	}
 	req := CreateRequest[R]{
-		BaseRequest: parseRequest[R](r),
+		BaseRequest: base,
+		Body:        body,
+		RawBody:     raw,
 	}
 	resp := h(req)
 	resp.write(req.BaseRequest, w)
 }
 
 func (h SearchHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	base := parseRequest[R](r)
 	req := SearchRequest[R]{
-		BaseRequest: parseRequest[R](r),
+		BaseRequest: base,
+		Body:        r.Form,
 	}
 	resp := h(req)
 	resp.write(req.BaseRequest, w)
+}
+
+func parseRawBody(r *http.Request) ([]byte, error) {
+	var reader io.Reader = r.Body
+	const maxFormSize = int64(10 << 20) // 10 MB is a lot of text.
+	reader = io.LimitReader(r.Body, maxFormSize+1)
+	return io.ReadAll(reader)
+}
+
+func parseBody[R Resource](r *BaseRequest[R], raw []byte) (R, error) {
+	var body R
+	var err error
+	switch r.ContentType {
+	case ContentTypeForm:
+		return body, errors.New("unsupported Content-Type")
+	case ContentTypeJSON:
+		err = json.Unmarshal(raw, &body)
+	case ContentTypeTurtle:
+		return body, errors.New("unsupported Content-Type")
+	case ContentTypeXML:
+		return body, errors.New("unsupported Content-Type")
+	default:
+		return body, errors.New("unsupported Content-Type")
+	}
+	return body, err
+}
+
+func sendErr(w http.ResponseWriter, err error) {
+	http.Error(w, err.Error(), http.StatusBadRequest)
 }
