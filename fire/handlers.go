@@ -13,14 +13,15 @@ type Resource interface {
 }
 
 type (
-	ReadHandler[R Resource]      func(ReadRequest[R]) Response
-	VReadHandler[R Resource]     func(VReadRequest[R]) Response
-	UpdateHandler[R Resource]    func(UpdateRequest[R]) Response
-	PatchHandler[R Resource]     func(PatchRequest[R]) Response
-	DeleteHandler[R Resource]    func(DeleteRequest[R]) Response
-	CreateHandler[R Resource]    func(CreateRequest[R]) Response
-	SearchHandler[R Resource]    func(SearchRequest[R]) Response
-	ExtensionHandler[R Resource] func(ExtensionRequest[R]) Response
+	ReadHandler[R Resource]        func(ReadRequest[R]) Response
+	VReadHandler[R Resource]       func(VReadRequest[R]) Response
+	UpdateHandler[R Resource]      func(UpdateRequest[R]) Response
+	PatchHandler[R Resource]       func(PatchRequest[R]) Response
+	DeleteHandler[R Resource]      func(DeleteRequest[R]) Response
+	CreateHandler[R Resource]      func(CreateRequest[R]) Response
+	SearchHandler[R Resource]      func(SearchRequest[R]) Response
+	InstanceExtHandler[R Resource] func(InstanceExtRequest[R]) Response
+	TypeExtHandler[R Resource]     func(TypeExtRequest[R]) Response
 )
 
 func (h ReadHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -129,11 +130,20 @@ func (h SearchHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	resp.write(req.BaseRequest, w)
 }
 
-func (h ExtensionHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h InstanceExtHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	base := parseRequest[R](r)
-	req := ExtensionRequest[R]{
+	req := InstanceExtRequest[R]{
 		BaseRequest: base,
 		ID:          r.PathValue("id"),
+	}
+	resp := h(req)
+	resp.write(req.BaseRequest, w)
+}
+
+func (h TypeExtHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	base := parseRequest[R](r)
+	req := TypeExtRequest[R]{
+		BaseRequest: base,
 	}
 	resp := h(req)
 	resp.write(req.BaseRequest, w)

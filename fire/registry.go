@@ -41,7 +41,8 @@ type Operations[R Resource] struct {
 	// Additional operations on the resource instance.
 	//
 	// https://www.hl7.org/fhir/operations.html
-	InstanceExtensions map[string]ExtensionHandler[R]
+	InstanceExtensions map[string]InstanceExtHandler[R]
+	TypeExtensions     map[string]TypeExtHandler[R]
 }
 
 func (ops Operations[T]) extend(t Type, res []Operation) []Operation {
@@ -119,6 +120,16 @@ func (ops Operations[T]) extend(t Type, res []Operation) []Operation {
 		res = append(res, Operation{
 			Verb:        VerbPost,
 			Path:        "/" + string(t) + "/{id}/$" + name,
+			Interaction: InteractionExecute,
+			Type:        t,
+			Handler:     h,
+		})
+	}
+
+	for name, h := range ops.TypeExtensions {
+		res = append(res, Operation{
+			Verb:        VerbPost,
+			Path:        "/" + string(t) + "/$" + name,
 			Interaction: InteractionExecute,
 			Type:        t,
 			Handler:     h,

@@ -131,11 +131,19 @@ func (r SearchRequest[R]) Ok(res []R) Response {
 	return Response{Status: statuses.OK, Resource: res}
 }
 
-type ExtensionRequest[R Resource] struct {
+type InstanceExtRequest[R Resource] struct {
 	*BaseRequest[R]
 	ID string
 }
 
-func (r ExtensionRequest[R]) Ok(res any) Response {
+func (r InstanceExtRequest[R]) Ok(res Resource) Response {
+	return Response{Status: statuses.OK, Resource: res}
+}
+
+type TypeExtRequest[R Resource] struct {
+	*BaseRequest[R]
+}
+
+func (r TypeExtRequest[R]) Ok(res Resource) Response {
 	return Response{Status: statuses.OK, Resource: res}
 }
