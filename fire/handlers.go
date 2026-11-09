@@ -13,13 +13,14 @@ type Resource interface {
 }
 
 type (
-	ReadHandler[R Resource]   func(ReadRequest[R]) Response
-	VReadHandler[R Resource]  func(VReadRequest[R]) Response
-	UpdateHandler[R Resource] func(UpdateRequest[R]) Response
-	PatchHandler[R Resource]  func(PatchRequest[R]) Response
-	DeleteHandler[R Resource] func(DeleteRequest[R]) Response
-	CreateHandler[R Resource] func(CreateRequest[R]) Response
-	SearchHandler[R Resource] func(SearchRequest[R]) Response
+	ReadHandler[R Resource]      func(ReadRequest[R]) Response
+	VReadHandler[R Resource]     func(VReadRequest[R]) Response
+	UpdateHandler[R Resource]    func(UpdateRequest[R]) Response
+	PatchHandler[R Resource]     func(PatchRequest[R]) Response
+	DeleteHandler[R Resource]    func(DeleteRequest[R]) Response
+	CreateHandler[R Resource]    func(CreateRequest[R]) Response
+	SearchHandler[R Resource]    func(SearchRequest[R]) Response
+	ExtensionHandler[R Resource] func(ExtensionRequest[R]) Response
 )
 
 func (h ReadHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +51,7 @@ func (h UpdateHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	base := parseRequest[R](r)
-	body, err := parseBody[R](base, raw)
+	body, err := parseBody(base, raw)
 	if err != nil {
 		sendErr(w, err)
 		return
@@ -72,7 +73,7 @@ func (h PatchHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	base := parseRequest[R](r)
-	body, err := parseBody[R](base, raw)
+	body, err := parseBody(base, raw)
 	if err != nil {
 		sendErr(w, err)
 		return
@@ -104,7 +105,7 @@ func (h CreateHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	base := parseRequest[R](r)
-	body, err := parseBody[R](base, raw)
+	body, err := parseBody(base, raw)
 	if err != nil {
 		sendErr(w, err)
 		return
@@ -128,10 +129,19 @@ func (h SearchHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	resp.write(req.BaseRequest, w)
 }
 
+func (h ExtensionHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	base := parseRequest[R](r)
+	req := ExtensionRequest[R]{
+		BaseRequest: base,
+		ID:          r.PathValue("id"),
+	}
+	resp := h(req)
+	resp.write(req.BaseRequest, w)
+}
+
 func parseRawBody(r *http.Request) ([]byte, error) {
-	var reader io.Reader = r.Body
 	const maxFormSize = int64(10 << 20) // 10 MB is a lot of text.
-	reader = io.LimitReader(r.Body, maxFormSize+1)
+	reader := io.LimitReader(r.Body, maxFormSize+1)
 	return io.ReadAll(reader)
 }
 

@@ -6,13 +6,17 @@ type Registry map[Type]interface {
 	extend(Type, []Operation) []Operation
 }
 
-func (r Registry) Mux() *http.ServeMux {
-	mux := http.NewServeMux()
+func (r Registry) Operations() []Operation {
 	ops := []Operation{}
 	for t, op := range r {
 		op.extend(t, ops)
 	}
-	for _, op := range ops {
+	return ops
+}
+
+func (r Registry) Mux() *http.ServeMux {
+	mux := http.NewServeMux()
+	for _, op := range r.Operations() {
 		op.Register(mux)
 	}
 	return mux
@@ -33,6 +37,11 @@ type Operations[R Resource] struct {
 	Create CreateHandler[R]
 	// Search the resource type based on some filter criteria.
 	Search SearchHandler[R]
+
+	// Additional operations on the resource instance.
+	//
+	// https://www.hl7.org/fhir/operations.html
+	InstanceExtensions map[string]ExtensionHandler[R]
 }
 
 func (ops Operations[T]) extend(t Type, res []Operation) []Operation {
@@ -105,5 +114,16 @@ func (ops Operations[T]) extend(t Type, res []Operation) []Operation {
 			Handler:     ops.Search,
 		})
 	}
+
+	for name, h := range ops.InstanceExtensions {
+		res = append(res, Operation{
+			Verb:        VerbPost,
+			Path:        "/" + string(t) + "/{id}/$" + name,
+			Interaction: InteractionExecute,
+			Type:        t,
+			Handler:     h,
+		})
+	}
+
 	return res
 }

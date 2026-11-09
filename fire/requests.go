@@ -130,3 +130,12 @@ type SearchRequest[R Resource] struct {
 func (r SearchRequest[R]) Ok(res []R) Response {
 	return Response{Status: statuses.OK, Resource: res}
 }
+
+type ExtensionRequest[R Resource] struct {
+	*BaseRequest[R]
+	ID string
+}
+
+func (r ExtensionRequest[R]) Ok(res any) Response {
+	return Response{Status: statuses.OK, Resource: res}
+}

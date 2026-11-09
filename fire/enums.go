@@ -13,13 +13,14 @@ const (
 type Interaction string
 
 const (
-	InteractionRead   Interaction = "read"
-	InteractionVRead  Interaction = "vread"
-	InteractionUpdate Interaction = "update"
-	InteractionPatch  Interaction = "patch"
-	InteractionDelete Interaction = "delete"
-	InteractionCreate Interaction = "create"
-	InteractionSearch Interaction = "search"
+	InteractionRead    Interaction = "read"
+	InteractionVRead   Interaction = "vread"
+	InteractionUpdate  Interaction = "update"
+	InteractionPatch   Interaction = "patch"
+	InteractionDelete  Interaction = "delete"
+	InteractionCreate  Interaction = "create"
+	InteractionSearch  Interaction = "search"
+	InteractionExecute Interaction = "execute"
 )
 
 type Prefer string
