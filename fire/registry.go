@@ -9,7 +9,7 @@ type Registry map[Type]interface {
 func (r Registry) Operations() []Operation {
 	ops := []Operation{}
 	for t, op := range r {
-		op.extend(t, ops)
+		ops = op.extend(t, ops)
 	}
 	return ops
 }

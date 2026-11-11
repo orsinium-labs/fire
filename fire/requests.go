@@ -74,7 +74,7 @@ func parseRequest[R Resource](raw *http.Request) *BaseRequest[R] {
 	return r
 }
 
-func (r *BaseRequest[R]) BadRequest[E Resource](res E) Response {
+func (r *BaseRequest[R]) BadRequest(res Resource) Response {
 	return Response{Status: statuses.BadRequest, Resource: res}
 }
 
