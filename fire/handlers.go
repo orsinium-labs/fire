@@ -123,7 +123,7 @@ func (h CreateHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h SearchHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	base := parseRequest[R](r)
 	body := r.URL.Query()
-	if r.Method == "POST" {
+	if r.Method == "POST" && base.ContentType == ContentTypeForm {
 		_ = r.ParseForm()
 		body = r.Form
 	}

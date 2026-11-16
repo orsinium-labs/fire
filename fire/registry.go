@@ -140,6 +140,13 @@ func (ops Operations[T]) extend(t Type, res []Operation) []Operation {
 
 	for name, h := range ops.InstanceExtensions {
 		res = append(res, Operation{
+			Verb:        VerbGet,
+			Path:        "/" + string(t) + "/{id}/$" + name,
+			Interaction: InteractionExecute,
+			Type:        t,
+			Handler:     h,
+		})
+		res = append(res, Operation{
 			Verb:        VerbPost,
 			Path:        "/" + string(t) + "/{id}/$" + name,
 			Interaction: InteractionExecute,
@@ -149,6 +156,13 @@ func (ops Operations[T]) extend(t Type, res []Operation) []Operation {
 	}
 
 	for name, h := range ops.TypeExtensions {
+		res = append(res, Operation{
+			Verb:        VerbGet,
+			Path:        "/" + string(t) + "/$" + name,
+			Interaction: InteractionExecute,
+			Type:        t,
+			Handler:     h,
+		})
 		res = append(res, Operation{
 			Verb:        VerbPost,
 			Path:        "/" + string(t) + "/$" + name,
