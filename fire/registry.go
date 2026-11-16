@@ -6,6 +6,21 @@ type Registry map[Type]interface {
 	extend(Type, []Operation) []Operation
 }
 
+func (r Registry) Get(t Type, i Interaction) *Operation {
+	op := r[t]
+	if op == nil {
+		return nil
+	}
+	ops := []Operation{}
+	ops = op.extend(t, ops)
+	for _, op := range ops {
+		if op.Interaction == i {
+			return &op
+		}
+	}
+	return nil
+}
+
 func (r Registry) Operations() []Operation {
 	ops := []Operation{}
 	for t, op := range r {
