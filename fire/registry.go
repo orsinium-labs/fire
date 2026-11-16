@@ -123,6 +123,13 @@ func (ops Operations[T]) extend(t Type, res []Operation) []Operation {
 
 	if ops.Search != nil {
 		res = append(res, Operation{
+			Verb:        VerbGet,
+			Path:        "/" + string(t) + "/_search",
+			Interaction: InteractionSearch,
+			Type:        t,
+			Handler:     ops.Search,
+		})
+		res = append(res, Operation{
 			Verb:        VerbPost,
 			Path:        "/" + string(t) + "/_search",
 			Interaction: InteractionSearch,

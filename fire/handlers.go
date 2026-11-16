@@ -122,9 +122,14 @@ func (h CreateHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h SearchHandler[R]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	base := parseRequest[R](r)
+	body := r.URL.Query()
+	if r.Method == "POST" {
+		_ = r.ParseForm()
+		body = r.Form
+	}
 	req := SearchRequest[R]{
 		BaseRequest: base,
-		Body:        r.Form,
+		Body:        body,
 	}
 	resp := h(req)
 	resp.write(req.BaseRequest, w)
